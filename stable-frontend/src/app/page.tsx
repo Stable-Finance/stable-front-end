@@ -12,9 +12,10 @@ import { monadTestnet } from "wagmi/chains";
 
 import nft_abi from "@/nft_abi.json"
 import usdx_abi from "@/usdx_abi.json"
-import { NFT_ADDR } from "@/constants";
+import { NFT_ADDR, USDX_ADDR } from "@/constants";
 import { get_properties } from "@/utils";
 import { useReadContract, useReadContracts } from "wagmi";
+import { readContract } from "wagmi/actions";
 
 export default function Home() {
   const { user } = usePrivy();
@@ -111,8 +112,7 @@ function HasNFTSection({ viemClient, user_addr, latest_hash, n_nfts }: { viemCli
       args: [user_addr, BigInt(i)]
     }))
   })
-  console.log(data, n_nfts)
-  if (isLoading) {
+  if (isLoading || !data) {
     return <div className="flex flex-col gap-4 p-4 justify-center">
       <p>Loading...</p>
     </div>
@@ -122,10 +122,52 @@ function HasNFTSection({ viemClient, user_addr, latest_hash, n_nfts }: { viemCli
       <p>Error!</p>
     </div>
   }
-  return <div className="flex flex-col gap-4">
-    
-  </div>
+  return <WithBorrowSection viemClient={viemClient} user_addr={user_addr} latest_hash={latest_hash} nft_ids={data.map(r => r.result as bigint)} />
 
+}
+
+function WithBorrowSection({ viemClient, user_addr, latest_hash, nft_ids }: { viemClient: WalletClient, user_addr: string, latest_hash: string, nft_ids: bigint[] }) {
+  const { data, isLoading, isError } = useReadContracts({
+    contracts: nft_ids.map((nft_id) => ({
+      abi: nft_abi,
+      address: NFT_ADDR as Hex,
+      functionName: "tokenURI",
+      args: [nft_id],
+    }))
+  })
+  if (isLoading || !data) {
+    return <div className="flex flex-col gap-4 p-4 justify-center">
+      <p>Loading...</p>
+    </div>
+  }
+  if (isError) {
+    return <div className="flex flex-col gap-4 p-4 justify-center">
+      <p>Error!</p>
+    </div>
+  }
+  return <div className="grid grid-cols-2 gap-4 pt-8">
+    {data.map(r => r.result as string | undefined).filter(r => r !== undefined).map((r, idx) => <PropertyManager
+      latest_hash={latest_hash}
+      nft_id={0n}
+      uri={r}
+      user_addr={user_addr}
+      viemClient={viemClient}
+      key={idx}
+    />)}
+  </div>
+}
+
+function PropertyManager({ viemClient, user_addr, latest_hash, nft_id, uri }: { viemClient: WalletClient, user_addr: string, latest_hash: string, uri: string, nft_id: bigint }) {
+  const b64data = uri.split(",")[1]
+  const decoded = atob(b64data)
+  const jsonData = JSON.parse(decoded)
+  
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img
+    className=""
+    src={jsonData.image}
+    alt={jsonData.name}
+  />
 }
 
 function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClient, user_addr: string, on_trx: (hash: string) => void }) {
@@ -200,9 +242,26 @@ function LoggedInUser() {
     return <p>Error!</p>
   }
 
-  return <div className="bg-[#c89116] rounded-md p-2 gap-2 flex">
-    <p>{email ? email : ""}</p>
-    <p className="font-bold">{wallet ? `${wallet.slice(0, 6)}...${wallet.slice(38)}` : ""}</p>
-    <button onClick={() => logout()}><XCircleIcon className="w-6 h-6 cursor-pointer" /></button>
+  return <div className="flex gap-2 items-center">
+    <USDXDisplay addr={wallet} />
+    <div className="bg-[#c89116] rounded-md p-2 gap-2 flex">
+      <p className="font-bold">{wallet ? `${wallet.slice(0, 6)}...${wallet.slice(38)}` : ""}</p>
+      <button onClick={() => logout()}><XCircleIcon className="w-6 h-6 cursor-pointer" /></button>
+    </div>
   </div>
+}
+
+function USDXDisplay({ addr }: { addr: string }) {
+  const { data, isError, isLoading } = useReadContract({
+    abi: usdx_abi,
+    address: USDX_ADDR,
+    functionName: "balanceOf",
+    args: [addr]
+  })
+
+  if (isError || isLoading || !data) {
+    return <></>
+  }
+
+  return <p><b>USDX:</b> ${(data as bigint) / 1000000n}</p>
 }
