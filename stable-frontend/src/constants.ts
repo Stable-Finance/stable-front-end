@@ -1,0 +1,2 @@
+export const USDX_ADDR = "0xd875ba8e2cad3c0f7e2973277c360c8d2f92b510"
+export const NFT_ADDR = "0x47aaf8861ae722c9292df36346696d5381e97e22"
