@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 // #ffd577 c89116 f9da79 b79132 e6e6e6
@@ -5,7 +6,7 @@
 import LoginButton from "@/components/LoginButton";
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { XCircleIcon } from '@heroicons/react/24/outline'
-import { InputNumber } from "antd";
+import { InputNumber, Modal } from "antd";
 import { Suspense, useEffect, useState } from "react";
 import { createWalletClient, custom, Hex, WalletClient } from "viem";
 import { monadTestnet } from "wagmi/chains";
@@ -158,16 +159,71 @@ function WithBorrowSection({ viemClient, user_addr, latest_hash, nft_ids }: { vi
 }
 
 function PropertyManager({ viemClient, user_addr, latest_hash, nft_id, uri }: { viemClient: WalletClient, user_addr: string, latest_hash: string, uri: string, nft_id: bigint }) {
+  const [is_open, set_is_open] = useState(false)
   const b64data = uri.split(",")[1]
   const decoded = atob(b64data)
   const jsonData = JSON.parse(decoded)
+  const attrs = jsonData.attributes
   
-  // eslint-disable-next-line @next/next/no-img-element
-  return <img
-    className=""
-    src={jsonData.image}
-    alt={jsonData.name}
-  />
+  console.log(jsonData)
+  return <>
+    <Modal footer={null} title={jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
+      <div className="flex flex-col gap-2">
+        <p>Property Value: {attrs[0].value}</p>
+        <p>Liens: {attrs[1].value}</p>
+        <div className="flex w-full gap-2">
+          <BorrowModal jsonData={jsonData}/>
+          <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
+            Make Payment
+          </button>
+          <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
+            Repay
+          </button>
+        </div>
+      </div>
+    </Modal>
+    <img
+      onClick={() => set_is_open(true)}
+      className="cursor-pointer"
+      src={jsonData.image}
+      alt={jsonData.name}
+    />
+  </>
+}
+
+function BorrowModal({ jsonData }: {jsonData: any}) {
+  const [is_open, set_is_open] = useState(false)
+  const value = BigInt(jsonData.attributes[0].value)
+  const liens = BigInt(jsonData.attributes[1].value)
+  const debt = BigInt(jsonData.attributes[2].value)
+  const max_ltv = BigInt(jsonData.attributes[3].value)
+
+  let max_borrow: bigint | string = 0n
+  if (value > liens) {
+    const borrowable = (value - liens) * max_ltv / 1_000_000_000n;
+    if (debt < borrowable) {
+      max_borrow = borrowable - debt;
+    } else {
+      max_borrow = "There is too much debt on the property"
+    }
+  } else {
+    max_borrow = "There are too many liens on the property"
+  }
+
+  return <>
+    <button
+      className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full"
+      onClick={() => set_is_open(true)}
+    >
+      Borrow
+    </button>
+    <Modal footer={null} title={"Borrow From " + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
+      {typeof max_borrow === "bigint" ? <>
+        <p>You can borrow up to: {max_borrow}</p>
+      </> : <>
+      </>}
+    </Modal>
+  </>
 }
 
 function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClient, user_addr: string, on_trx: (hash: string) => void }) {
