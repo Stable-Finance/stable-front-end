@@ -7,6 +7,7 @@ import { monadTestnet } from "wagmi/chains";
 import { WagmiProvider } from 'wagmi'
 import { config } from "@/config";
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Toaster } from "react-hot-toast";
 
 const queryClient = new QueryClient()
 
@@ -55,6 +56,10 @@ export default function RootLayout({
             <body
               className={`${geistSans.variable} ${geistMono.variable} antialiased`}
             >
+              <Toaster
+                position="top-center"
+                reverseOrder={false}
+              />
               {children}
             </body>
           </html>

@@ -5,18 +5,17 @@
 
 import LoginButton from "@/components/LoginButton";
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { XCircleIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon, ClipboardIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { InputNumber, Modal } from "antd";
-import { Suspense, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { createWalletClient, custom, Hex, WalletClient } from "viem";
 import { monadTestnet } from "wagmi/chains";
 
 import nft_abi from "@/nft_abi.json"
 import usdx_abi from "@/usdx_abi.json"
 import { NFT_ADDR, USDX_ADDR } from "@/constants";
-import { get_properties } from "@/utils";
-import { useReadContract, useReadContracts } from "wagmi";
-import { readContract } from "wagmi/actions";
+import { get_properties, refresh_after_trx } from "@/utils";
+import { useBalance, useReadContract, useReadContracts } from "wagmi";
 
 export default function Home() {
   const { user } = usePrivy();
@@ -86,7 +85,6 @@ function BorrowSection({ viemClient, user_addr, latest_hash }: { viemClient: Wal
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [latest_hash])
 
-  console.log(data, user_addr)
 
   if (isLoading) {
     return <div className="flex flex-col gap-4 p-4 justify-center">
@@ -149,7 +147,6 @@ function WithBorrowSection({ viemClient, user_addr, latest_hash, nft_ids }: { vi
   return <div className="grid grid-cols-2 gap-4 pt-8">
     {data.map(r => r.result as string | undefined).filter(r => r !== undefined).map((r, idx) => <PropertyManager
       latest_hash={latest_hash}
-      nft_id={0n}
       uri={r}
       user_addr={user_addr}
       viemClient={viemClient}
@@ -158,21 +155,21 @@ function WithBorrowSection({ viemClient, user_addr, latest_hash, nft_ids }: { vi
   </div>
 }
 
-function PropertyManager({ viemClient, user_addr, latest_hash, nft_id, uri }: { viemClient: WalletClient, user_addr: string, latest_hash: string, uri: string, nft_id: bigint }) {
+function PropertyManager({ viemClient, user_addr, latest_hash, uri }: { viemClient: WalletClient, user_addr: string, latest_hash: string, uri: string }) {
   const [is_open, set_is_open] = useState(false)
   const b64data = uri.split(",")[1]
   const decoded = atob(b64data)
   const jsonData = JSON.parse(decoded)
   const attrs = jsonData.attributes
+  const nft_id = BigInt(jsonData.name.split("#")[1])
   
-  console.log(jsonData)
   return <>
     <Modal footer={null} title={jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
       <div className="flex flex-col gap-2">
         <p>Property Value: {attrs[0].value}</p>
         <p>Liens: {attrs[1].value}</p>
         <div className="flex w-full gap-2">
-          <BorrowModal jsonData={jsonData}/>
+          <BorrowModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
           <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
             Make Payment
           </button>
@@ -191,7 +188,7 @@ function PropertyManager({ viemClient, user_addr, latest_hash, nft_id, uri }: { 
   </>
 }
 
-function BorrowModal({ jsonData }: {jsonData: any}) {
+function BorrowModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any, viemClient: WalletClient, user_addr: string, nft_id: bigint}) {
   const [is_open, set_is_open] = useState(false)
   const value = BigInt(jsonData.attributes[0].value)
   const liens = BigInt(jsonData.attributes[1].value)
@@ -200,15 +197,18 @@ function BorrowModal({ jsonData }: {jsonData: any}) {
 
   let max_borrow: bigint | string = 0n
   if (value > liens) {
-    const borrowable = (value - liens) * max_ltv / 1_000_000_000n;
-    if (debt < borrowable) {
-      max_borrow = borrowable - debt;
-    } else {
+    const borrowable = (value - liens) * max_ltv / 100n;
+    console.log(borrowable)
+    if (debt > borrowable) {
       max_borrow = "There is too much debt on the property"
+    } else {
+      max_borrow = borrowable - debt;
     }
   } else {
     max_borrow = "There are too many liens on the property"
   }
+  console.log(max_borrow)
+  const [borrow, set_borrow] = useState(typeof max_borrow === "string" ? "0" : String(max_borrow))
 
   return <>
     <button
@@ -218,9 +218,35 @@ function BorrowModal({ jsonData }: {jsonData: any}) {
       Borrow
     </button>
     <Modal footer={null} title={"Borrow From " + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
-      {typeof max_borrow === "bigint" ? <>
-        <p>You can borrow up to: {max_borrow}</p>
-      </> : <>
+      {typeof max_borrow === "bigint" ? <div className="flex flex-col gap-4">
+        <p>You can borrow up to: {max_borrow} USDX</p>
+        <InputNumber
+          stringMode
+          min="0"
+          max={String(max_borrow)}
+          defaultValue={String(max_borrow)}
+          onChange={v => set_borrow(v || "0")}
+          style={{
+            width: "8rem"
+          }}
+        />
+        <button
+          className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full"
+          onClick={async () => {
+            console.log(nft_id, BigInt(borrow) * 1_000_000n)
+            refresh_after_trx(() => viemClient.writeContract({
+              account: user_addr as Hex,
+              chain: monadTestnet,
+              abi: nft_abi,
+              address: NFT_ADDR,
+              args: [nft_id, BigInt(borrow) * 1_000_000n],
+              functionName: "borrow"
+            }))
+          }}
+        >
+      Confirm
+    </button>
+      </div> : <>
       </>}
     </Modal>
   </>
@@ -267,7 +293,7 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
     <button
       onClick={async () => {
         const propertyValue = BigInt(value + "000000");
-        const trx_hash = await viemClient.writeContract({
+        refresh_after_trx(() => viemClient.writeContract({
           abi: nft_abi,
           address: NFT_ADDR,
           functionName: "depositProperty",
@@ -280,8 +306,7 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
           ],
           account: user_addr as Hex,
           chain: monadTestnet
-        })
-        on_trx(trx_hash)
+        }))
       }}
       className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer"
     >
@@ -292,6 +317,7 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
 
 function LoggedInUser() {
   const { user, logout } = usePrivy();
+  const [copied, set_copied] = useState(false)
   const email = user?.email?.address
   const wallet = user?.wallet?.address
   if (!wallet) {
@@ -300,8 +326,14 @@ function LoggedInUser() {
 
   return <div className="flex gap-2 items-center">
     <USDXDisplay addr={wallet} />
-    <div className="bg-[#c89116] rounded-md p-2 gap-2 flex">
-      <p className="font-bold">{wallet ? `${wallet.slice(0, 6)}...${wallet.slice(38)}` : ""}</p>
+    <div className="bg-[#c89116] rounded-md p-2 gap-2 flex items-center">
+      <p className="leading-none">{`${wallet.slice(0, 6)}...${wallet.slice(38)}`}</p>
+      <button onClick={() => navigator.clipboard.writeText(wallet)}>
+        {copied ?
+          <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
+          <ClipboardIcon onClick={() => set_copied(true)} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
+        }
+      </button>
       <button onClick={() => logout()}><XCircleIcon className="w-6 h-6 cursor-pointer" /></button>
     </div>
   </div>
@@ -316,7 +348,7 @@ function USDXDisplay({ addr }: { addr: string }) {
   })
 
   if (isError || isLoading || !data) {
-    return <></>
+    return <p><b>USDX:</b> $0</p>
   }
 
   return <p><b>USDX:</b> ${(data as bigint) / 1000000n}</p>
