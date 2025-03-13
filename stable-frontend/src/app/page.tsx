@@ -5,7 +5,7 @@
 
 import LoginButton from "@/components/LoginButton";
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { ClipboardDocumentCheckIcon, ClipboardIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon, ClipboardIcon, QuestionMarkCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { InputNumber, Modal } from "antd";
 import { useEffect, useState } from "react";
 import { createWalletClient, custom, Hex, WalletClient } from "viem";
@@ -13,17 +13,18 @@ import { monadTestnet } from "wagmi/chains";
 
 import nft_abi from "@/nft_abi.json"
 import usdx_abi from "@/usdx_abi.json"
-import { NFT_ADDR, USDX_ADDR } from "@/constants";
-import { get_properties, refresh_after_trx } from "@/utils";
+import { NFT_ADDR, USDC_ADDR, USDT_ADDR, USDX_ADDR } from "@/constants";
+import { ensure_tokens_approved, get_properties, refresh_after_trx } from "@/utils";
 import { useBalance, useReadContract, useReadContracts } from "wagmi";
 
 export default function Home() {
   const { user } = usePrivy();
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center bg-[#e6e6e6] ">
-      <div className="text-black border-4 rounded-xl border-[#c89116] max-w-xl w-full p-4 flex flex-col gap-4">
+      <div className="text-black border-4 rounded-xl border-[#c89116] max-w-2xl w-full p-4 flex flex-col gap-4">
         <div className="flex items-center">
-          <h2 className="font-extrabold text-2xl">Stable Protocol</h2>
+          <h2 className="font-extrabold text-2xl mr-2">Stable Protocol</h2>
+          <ContractAddressesPopup />
           <div className="ml-auto">{
             user ?
               <LoggedInUser /> :
@@ -34,6 +35,23 @@ export default function Home() {
       </div>
     </div>
   );
+}
+
+function ContractAddressesPopup() {
+  const [is_open, set_is_open] = useState(false)
+  return <div>
+    <button className="cursor-pointer" onClick={() => set_is_open(true)}>
+      <QuestionMarkCircleIcon className="h-6 w-6" strokeWidth={2}/>
+    </button>
+    <Modal title="Contract Addresses" onCancel={() => set_is_open(false)} open={is_open} footer={null}>
+      <div className="grid grid-cols-[1fr_2fr]">
+        <p className="font-bold">USDX</p>
+        <a href={`https://testnet.monadexplorer.com/token/${USDX_ADDR}`} className="font-mono" target="_blank">{USDX_ADDR}</a>
+        <p className="font-bold">Property NFT</p>
+        <a href={`https://testnet.monadexplorer.com/token/${NFT_ADDR}`} className="font-mono" target="_blank">{NFT_ADDR}</a>
+      </div>
+    </Modal>
+  </div>
 }
 
 function WithWallet() {
@@ -163,19 +181,21 @@ function PropertyManager({ viemClient, user_addr, latest_hash, uri }: { viemClie
   const attrs = jsonData.attributes
   const nft_id = BigInt(jsonData.name.split("#")[1])
   
+  console.log(attrs)
   return <>
     <Modal footer={null} title={jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
-      <div className="flex flex-col gap-2">
-        <p>Property Value: {attrs[0].value}</p>
-        <p>Liens: {attrs[1].value}</p>
-        <div className="flex w-full gap-2">
+      <div className="flex flex-col gap-4">
+        <img src={jsonData.image} alt={jsonData.name} className="" />
+        <p><b>Deposited:</b> <span className="font-mono">{new Date(attrs[7].value).toTimeString()}</span></p>
+        <p><b>Prepaid Interest:</b> <span className="font-mono">{attrs[8].value}</span></p>
+        <p><b>Unpaid Interest:</b> <span className="font-mono">{attrs[9].value}</span></p>
+        <p><b>Missed Payments:</b> <span className="font-mono">{attrs[10].value}</span></p>
+        <div className="flex w-full gap-4">
           <BorrowModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
           <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
             Make Payment
           </button>
-          <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
-            Repay
-          </button>
+          <RepayModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
         </div>
       </div>
     </Modal>
@@ -215,7 +235,7 @@ function BorrowModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any
       className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full"
       onClick={() => set_is_open(true)}
     >
-      Borrow
+      Borrow USDX
     </button>
     <Modal footer={null} title={"Borrow From " + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
       {typeof max_borrow === "bigint" ? <div className="flex flex-col gap-4">
@@ -244,10 +264,71 @@ function BorrowModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any
             }))
           }}
         >
-      Confirm
-    </button>
+          Confirm
+        </button>
       </div> : <>
+        <p>Unable to Borrow: {max_borrow}</p>
       </>}
+    </Modal>
+  </>
+}
+function RepayModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any, viemClient: WalletClient, user_addr: string, nft_id: bigint}) {
+  const [is_open, set_is_open] = useState(false)
+  const [repay, set_repay] = useState("0")
+  const [token, set_token] = useState(USDX_ADDR)
+  const debt = BigInt(jsonData.attributes[2].value)
+
+  return <>
+    <button
+      className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full"
+      onClick={() => set_is_open(true)}
+    >
+      Repay Debt
+    </button>
+    <Modal footer={null} title={"Repay Debt of " + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
+      <p className="mb-2">This property has a debt of {debt}</p>
+      <div className="grid gap-2 grid-cols-2">
+        <p className="font-bold">Repay Amount:</p>
+        <InputNumber
+          stringMode
+          min="0"
+          max={String(debt)}
+          defaultValue={"0"}
+          onChange={v => set_repay(v || "0")}
+          style={{
+            width: "8rem"
+          }}
+        />
+        <p className="font-bold">Token:</p>
+        <select value={token} onChange={e => set_token(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white font-mono">
+          <option value={USDX_ADDR}>USDX</option>
+          <option value={USDT_ADDR}>USDT</option>
+          <option value={USDC_ADDR}>USDC</option>
+        </select>
+      </div>
+      <div className="flex gap-2 mt-2">
+        <button
+          className="bg-[#c89116] rounded-md py-2 font-bold cursor-pointer w-full"
+          onClick={async () => {
+            console.log(nft_id, BigInt(repay) * 1_000_000n)
+            ensure_tokens_approved(
+              viemClient,
+              token as Hex,
+              BigInt(repay) * 1_000_000n,
+              () => refresh_after_trx(() => viemClient.writeContract({
+                account: user_addr as Hex,
+                chain: monadTestnet,
+                abi: nft_abi,
+                address: NFT_ADDR,
+                args: [nft_id, token, BigInt(repay) * 1_000_000n],
+                functionName: "repayBorrow"
+              }))
+            )
+          }}
+        >
+          Confirm
+        </button>
+      </div>
     </Modal>
   </>
 }
@@ -258,9 +339,8 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
   const [lien, setLien] = useState("0")
 
   return <div className="flex flex-col gap-4">
-    <p className="font-bold">Deposit Property</p>
-    <div className="flex gap-4 items-center">
-      <p className="">Property Value</p>
+    <div className="grid grid-cols-2 gap-2">
+      <p className="font-bold">Property Value</p>
       <InputNumber
         stringMode
         min="0"
@@ -271,19 +351,15 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
           width: "8rem"
         }}
       />
-    </div>
-    <div className="flex gap-4 items-center">
-      <p className="">Max LTV</p>
-      <select value={ltv} onChange={e => setLtv(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white">
+      <p className="font-bold">Max LTV</p>
+      <select value={ltv} onChange={e => setLtv(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white font-mono">
         <option value={"800000000"}>Residential - 80%</option>
         <option value={"650000000"}>Agricultural - 65%</option>
-        <option value={"600000000"}>Commerial - 60%</option>
+        <option value={"600000000"}>Commercial - 60%</option>
         <option value={"500000000"}>Industrial - 50%</option>
       </select>
-    </div>
-    <div className="flex gap-4 items-center">
-      <p className="">Lien</p>
-      <select value={lien} onChange={e => setLien(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white">
+      <p className="font-bold">Lien</p>
+      <select value={lien} onChange={e => setLien(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white font-mono">
         <option value={"0"}>None - 0%</option>
         <option value={"10"}>Low - 10%</option>
         <option value={"30"}>Medium - 30%</option>
@@ -308,9 +384,9 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
           chain: monadTestnet
         }))
       }}
-      className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer"
+      className="bg-[#c89116] rounded-md py-2 font-bold cursor-pointer"
     >
-      Deposit & Borrow
+      Deposit Property
     </button>
   </div>
 }
@@ -327,7 +403,7 @@ function LoggedInUser() {
   return <div className="flex gap-2 items-center">
     <USDXDisplay addr={wallet} />
     <div className="bg-[#c89116] rounded-md p-2 gap-2 flex items-center">
-      <p className="leading-none">{`${wallet.slice(0, 6)}...${wallet.slice(38)}`}</p>
+      <p className="leading-none font-mono">{`${wallet.slice(0, 6)}...${wallet.slice(38)}`}</p>
       <button onClick={() => navigator.clipboard.writeText(wallet)}>
         {copied ?
           <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
@@ -348,8 +424,8 @@ function USDXDisplay({ addr }: { addr: string }) {
   })
 
   if (isError || isLoading || !data) {
-    return <p><b>USDX:</b> $0</p>
+    return <p><b>USDX:</b> <span className="font-mono">$0</span></p>
   }
 
-  return <p><b>USDX:</b> ${(data as bigint) / 1000000n}</p>
+  return <p><b>USDX:</b> <span className="font-mono">${(data as bigint) / 1000000n}</span></p>
 }
