@@ -507,7 +507,7 @@ function LoggedInUser() {
     return <p className="font-mono">Loading...</p>
   }
   if (store.current_addr == null) {
-    return <button className="bg-[#c89116] cursor-pointer rounded-sm p-1 font-bold" onClick={() => login()}>Login</button>
+    return <button className="bg-[#c89116] cursor-pointer rounded-sm p-1 px-2 font-bold" onClick={() => login()}>Login</button>
   }
 
   const addr = store.current_addr
@@ -518,7 +518,7 @@ function LoggedInUser() {
         {store.wallets.map((w, i) =>
           <button
             key={i}
-            className="p-1 hover:bg-[#c89116] rounded-sm font-mono hover:font-bold cursor-pointer"
+            className="p-1 px-2 hover:bg-[#e9e9e9] rounded-sm font-mono hover:font-bold cursor-pointer"
             onClick={() => {
               store.set_current_wallet(i)
               set_is_open(false)
@@ -528,10 +528,10 @@ function LoggedInUser() {
           </button>)}
           <div>
             <button
-              className="bg-[#c89116] rounded-sm p-2 cursor-pointer"
+              className="bg-[#c89116] rounded-sm p-2 cursor-pointer font-bold"
               onClick={() => linkWallet()}
             >
-              Connect More Wallets
+              Connect Another Wallet
             </button>
           </div>
       </div>
