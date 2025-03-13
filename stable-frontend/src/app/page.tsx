@@ -506,7 +506,7 @@ function LoggedInUser() {
     return <p>Loading...</p>
   }
   if (store.current_addr == null) {
-    return <button onClick={() => login()}>Login</button>
+    return <button className="bg-[#c89116] font-mono hover:font-bold cursor-pointer rounded-sm" onClick={() => login()}>Login</button>
   }
 
   const addr = store.current_addr
