@@ -103,3 +103,9 @@ export async function refresh_after_trx(cb: () => Promise<string>) {
         }
     } catch (_) {}
 }
+
+export const formatCurrency = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    trailingZeroDisplay: "stripIfInteger"
+}).format

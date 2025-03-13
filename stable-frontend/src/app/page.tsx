@@ -13,9 +13,10 @@ import { monadTestnet } from "wagmi/chains";
 import nft_abi from "@/nft_abi.json"
 import usdx_abi from "@/usdx_abi.json"
 import { NFT_ADDR, USDC_ADDR, USDT_ADDR, USDX_ADDR } from "@/constants";
-import { ensure_tokens_approved, get_properties, refresh_after_trx } from "@/utils";
+import { ensure_tokens_approved, formatCurrency, get_properties, refresh_after_trx } from "@/utils";
 import { useBalance, useReadContract, useReadContracts } from "wagmi";
 import { create } from 'zustand'
+import toast from "react-hot-toast";
 
 export default function Home() {
   return (
@@ -202,9 +203,9 @@ function PropertyManager({ viemClient, user_addr, latest_hash, uri }: { viemClie
       <div className="flex flex-col gap-4">
         <img src={jsonData.image} alt={jsonData.name} className="" />
         <p><b>Deposited:</b> <span className="font-mono">{new Date(attrs[7].value).toTimeString()}</span></p>
-        <p><b>Prepaid Interest:</b> <span className="font-mono">{attrs[8].value}</span></p>
-        <p><b>Unpaid Interest:</b> <span className="font-mono">{attrs[9].value}</span></p>
-        <p><b>Missed Payments:</b> <span className="font-mono">{attrs[10].value}</span></p>
+        <p><b>Prepaid Interest:</b> <span className="font-mono">{formatCurrency(attrs[8].value)}</span></p>
+        <p><b>Unpaid Interest:</b> <span className="font-mono">{formatCurrency(attrs[9].value)}</span></p>
+        <p><b>Missed Payments:</b> <span className="font-mono">{formatCurrency(attrs[10].value)}</span></p>
         <div className="flex w-full gap-4">
           <BorrowModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
           <InterestModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
@@ -236,8 +237,8 @@ function InterestModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: a
       Make Payment
     </button>
     <Modal footer={null} title={"Make Interest Payment on" + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
-      <p className="mb-2">This property has <b>{unpaid_interest}</b> worth of unpaid interest.</p>
-      <p className="mb-2">This property has <b>{prepaid_interest}</b> worth of prepaid interest.</p>
+      <p className="mb-2">This property has <b className="font-mono">{formatCurrency(unpaid_interest)}</b> worth of unpaid interest.</p>
+      <p className="mb-2">This property has <b className="font-mono">{formatCurrency(prepaid_interest)}</b> worth of prepaid interest.</p>
       <p className="mb-2">
         In the current implementation, interest works seperately than principal.
         It is the borrower&apos;s responsibility that sufficient interest is deposited in
@@ -377,7 +378,7 @@ function RepayModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any,
       Repay Debt
     </button>
     <Modal footer={null} title={"Repay Debt of " + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
-      <p className="mb-2">This property has a debt of {debt}</p>
+      <p className="mb-2">This property has a debt of <b className="font-mono">{formatCurrency(debt)}</b></p>
       <div className="grid gap-2 grid-cols-2">
         <p className="font-bold">Repay Amount:</p>
         <InputNumber
@@ -503,10 +504,10 @@ function LoggedInUser() {
 
   const [copied, set_copied] = useState(false)
   if (!ready) {
-    return <p>Loading...</p>
+    return <p className="font-mono">Loading...</p>
   }
   if (store.current_addr == null) {
-    return <button className="bg-[#c89116] font-mono hover:font-bold cursor-pointer rounded-sm" onClick={() => login()}>Login</button>
+    return <button className="bg-[#c89116] cursor-pointer rounded-sm p-1 font-bold" onClick={() => login()}>Login</button>
   }
 
   const addr = store.current_addr
@@ -543,8 +544,18 @@ function LoggedInUser() {
     </div>
     <button onClick={() => navigator.clipboard.writeText(addr)}>
       {copied ?
-        <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
-        <ClipboardIcon onClick={() => set_copied(true)} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
+        <ClipboardDocumentCheckIcon
+          strokeWidth={2}
+          className="w-4 h-4 cursor-pointer"
+          onClick={() => {
+            set_copied(true)
+            toast.success("Copied Wallet Address")
+          }}
+        /> :
+        <ClipboardIcon onClick={() => {
+          set_copied(true)
+          toast.success("Copied Wallet Address")
+        }} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
       }
     </button>
   </div>
@@ -562,5 +573,5 @@ function USDXDisplay({ addr }: { addr: string }) {
     return <p><b>USDX:</b> <span className="font-mono">$0</span></p>
   }
 
-  return <p><b>USDX:</b> <span className="font-mono">${(data as bigint) / 1000000n}</span></p>
+  return <p><b>USDX:</b> <span className="font-mono">{formatCurrency((data as bigint) / 1000000n)}</span></p>
 }
