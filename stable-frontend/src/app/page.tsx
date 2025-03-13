@@ -207,9 +207,7 @@ function PropertyManager({ viemClient, user_addr, latest_hash, uri }: { viemClie
         <p><b>Missed Payments:</b> <span className="font-mono">{attrs[10].value}</span></p>
         <div className="flex w-full gap-4">
           <BorrowModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
-          <button className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full">
-            Make Payment
-          </button>
+          <InterestModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
           <RepayModal nft_id={nft_id} jsonData={jsonData} viemClient={viemClient} user_addr={user_addr} />
         </div>
       </div>
@@ -220,6 +218,84 @@ function PropertyManager({ viemClient, user_addr, latest_hash, uri }: { viemClie
       src={jsonData.image}
       alt={jsonData.name}
     />
+  </>
+}
+
+function InterestModal({ jsonData, viemClient, user_addr, nft_id }: {jsonData: any, viemClient: WalletClient, user_addr: string, nft_id: bigint}) {
+  const [is_open, set_is_open] = useState(false)
+  const [repay, set_repay] = useState("0")
+  const [token, set_token] = useState(USDX_ADDR)
+  const prepaid_interest = BigInt(jsonData.attributes[8].value)
+  const unpaid_interest = BigInt(jsonData.attributes[9].value)
+
+  return <>
+    <button
+      className="bg-[#c89116] rounded-md py-1 font-bold cursor-pointer w-full"
+      onClick={() => set_is_open(true)}
+    >
+      Make Payment
+    </button>
+    <Modal footer={null} title={"Make Interest Payment on" + jsonData.name} open={is_open} onOk={() => set_is_open(false)} onCancel={() => set_is_open(false)}>
+      <p className="mb-2">This property has <b>{unpaid_interest}</b> worth of unpaid interest.</p>
+      <p className="mb-2">This property has <b>{prepaid_interest}</b> worth of prepaid interest.</p>
+      <p className="mb-2">
+        In the current implementation, interest works seperately than principal.
+        It is the borrower&apos;s responsibility that sufficient interest is deposited in
+        in the prepaid interest account to cover the interest payments that are calculated
+        at the end of the month.
+      </p>
+      <p className="mb-2">
+        Interest payments are automatically deducted at the end of the month. If there is not sufficient
+        prepaid interest, the property will be hit with a missed payment. Three missed payments results
+        in borrowers being unable to borrow against the property.
+      </p>
+      <p className="mb-2">
+        If a property already has unpaid interest, interest payments will pay that off first
+        before it goes into the prepaid interest.
+      </p>
+      <div className="grid gap-2 grid-cols-2">
+        <p className="font-bold">Payment Amount:</p>
+        <InputNumber
+          stringMode
+          min="0"
+          max={String(100_000_000n)}
+          defaultValue={"0"}
+          onChange={v => set_repay(v || "0")}
+          style={{
+            width: "8rem"
+          }}
+        />
+        <p className="font-bold">Token:</p>
+        <select value={token} onChange={e => set_token(e.target.value)} className="border border-gray-300 p-1 rounded-sm bg-white font-mono">
+          <option value={USDX_ADDR}>USDX</option>
+          <option value={USDT_ADDR}>USDT</option>
+          <option value={USDC_ADDR}>USDC</option>
+        </select>
+      </div>
+      <div className="flex gap-2 mt-2">
+        <button
+          className="bg-[#c89116] rounded-md py-2 font-bold cursor-pointer w-full"
+          onClick={async () => {
+            console.log(nft_id, BigInt(repay) * 1_000_000n)
+            ensure_tokens_approved(
+              viemClient,
+              token as Hex,
+              BigInt(repay) * 1_000_000n,
+              () => refresh_after_trx(() => viemClient.writeContract({
+                account: user_addr as Hex,
+                chain: monadTestnet,
+                abi: nft_abi,
+                address: NFT_ADDR,
+                args: [nft_id, token, BigInt(repay) * 1_000_000n],
+                functionName: "makePayment"
+              }))
+            )
+          }}
+        >
+          Confirm
+        </button>
+      </div>
+    </Modal>
   </>
 }
 
@@ -454,7 +530,7 @@ function LoggedInUser() {
               className="bg-[#c89116] rounded-sm p-2 cursor-pointer"
               onClick={() => linkWallet()}
             >
-              Login With Privvy
+              Connect More Wallets
             </button>
           </div>
       </div>
