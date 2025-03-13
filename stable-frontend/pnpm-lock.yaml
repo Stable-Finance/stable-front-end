@@ -35,6 +35,9 @@ dependencies:
   wagmi:
     specifier: ^2.14.13
     version: 2.14.13(@tanstack/react-query@5.67.3)(@types/react@19.0.10)(react@19.0.0)(typescript@5.8.2)(viem@2.23.9)
+  zustand:
+    specifier: ^5.0.3
+    version: 5.0.3(@types/react@19.0.10)(react@19.0.0)
 
 devDependencies:
   '@eslint/eslintrc':

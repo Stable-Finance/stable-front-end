@@ -3,7 +3,6 @@
 
 // #ffd577 c89116 f9da79 b79132 e6e6e6
 
-import LoginButton from "@/components/LoginButton";
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { ClipboardDocumentCheckIcon, ClipboardIcon, QuestionMarkCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
 import { InputNumber, Modal } from "antd";
@@ -16,26 +15,42 @@ import usdx_abi from "@/usdx_abi.json"
 import { NFT_ADDR, USDC_ADDR, USDT_ADDR, USDX_ADDR } from "@/constants";
 import { ensure_tokens_approved, get_properties, refresh_after_trx } from "@/utils";
 import { useBalance, useReadContract, useReadContracts } from "wagmi";
+import { create } from 'zustand'
 
 export default function Home() {
-  const { user } = usePrivy();
   return (
     <div className="h-screen w-full flex flex-col justify-center items-center bg-[#e6e6e6] ">
       <div className="text-black border-4 rounded-xl border-[#c89116] max-w-2xl w-full p-4 flex flex-col gap-4">
         <div className="flex items-center">
           <h2 className="font-extrabold text-2xl mr-2">Stable Protocol</h2>
           <ContractAddressesPopup />
-          <div className="ml-auto">{
-            user ?
-              <LoggedInUser /> :
-              <LoginButton />
-          }</div>
+          <div className="ml-auto">
+            <LoggedInUser />
+          </div>
         </div>
         <WithWallet />
       </div>
     </div>
   );
 }
+
+interface WalletStore {
+  current_addr: string | null
+  current_wallet: ConnectedWallet | null
+  wallets: ConnectedWallet[]
+  set_wallets: (wallets: ConnectedWallet[]) => void
+  set_current_wallet: (idx: number) => void
+}
+const useWalletStore = create<WalletStore>(set => ({
+  current_addr: null,
+  current_wallet: null,
+  wallets: [],
+  set_wallets: wallets => set({ wallets }),
+  set_current_wallet: idx => set(state => ({
+    current_addr: state.wallets[idx].address,
+    current_wallet: state.wallets[idx]
+  }))
+}))
 
 function ContractAddressesPopup() {
   const [is_open, set_is_open] = useState(false)
@@ -55,15 +70,15 @@ function ContractAddressesPopup() {
 }
 
 function WithWallet() {
-  const { wallets } = useWallets()
+  const { wallets, current_addr, current_wallet } = useWalletStore()
   
-  if (wallets.length == 0) {
+  if (wallets.length == 0 || !current_addr || !current_wallet) {
     return <div className="flex flex-row items-center justify-center py-4">
       <p className="">You Must be Logged In</p>
     </div>
   }
 
-  return <WithViemClient wallet={wallets[0]} user_addr={wallets[0].address} />
+  return <WithViemClient wallet={current_wallet} user_addr={current_addr} />
 }
 
 function WithViemClient({ wallet, user_addr }: { wallet: ConnectedWallet, user_addr: string }) {
@@ -392,25 +407,59 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
 }
 
 function LoggedInUser() {
-  const { user, logout } = usePrivy();
+  const store = useWalletStore()
+  const { login } = usePrivy()
+  const { ready, wallets } = useWallets()
+  const [is_open, set_is_open] = useState(false)
+
+  useEffect(() => {
+    if (store.wallets.length == 0 && wallets.length > 0) {
+      store.set_wallets(wallets)
+      store.set_current_wallet(0)
+    } else {
+      for (const w of wallets) {
+        if (store.wallets.every(w2 => w2.address !== w.address)) {
+          store.set_wallets(wallets)
+        }
+      }
+    }
+  }, [wallets, store])
+
   const [copied, set_copied] = useState(false)
-  const email = user?.email?.address
-  const wallet = user?.wallet?.address
-  if (!wallet) {
-    return <p>Error!</p>
+  if (!ready) {
+    return <p>Loading...</p>
+  }
+  if (store.current_addr == null) {
+    return <button onClick={() => login()}>Login</button>
   }
 
+  const addr = store.current_addr
   return <div className="flex gap-2 items-center">
-    <USDXDisplay addr={wallet} />
-    <div className="bg-[#c89116] rounded-md p-2 gap-2 flex items-center">
-      <p className="leading-none font-mono">{`${wallet.slice(0, 6)}...${wallet.slice(38)}`}</p>
-      <button onClick={() => navigator.clipboard.writeText(wallet)}>
+    <USDXDisplay addr={addr} />
+    <Modal onCancel={() => set_is_open(false)} open={is_open} footer={false}>
+      {store.wallets.map((w, i) =>
+        <button
+          key={i}
+          className="p-1 hover:bg-[#c89116] rounded-sm font-mono hover:font-bold cursor-pointer"
+          onClick={() => {
+            store.set_current_wallet(i)
+            set_is_open(false)
+          }}
+        >
+          {w.address}
+        </button>)}
+    </Modal>
+    <div
+      className="bg-[#c89116] rounded-md p-2 gap-2 flex items-center cursor-pointer"
+      onClick={() => set_is_open(true)}
+    >
+      <p className="leading-none font-mono">{`${addr.slice(0, 6)}...${addr.slice(38)}`}</p>
+      <button onClick={() => navigator.clipboard.writeText(addr)}>
         {copied ?
           <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
           <ClipboardIcon onClick={() => set_copied(true)} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
         }
       </button>
-      <button onClick={() => logout()}><XCircleIcon className="w-6 h-6 cursor-pointer" /></button>
     </div>
   </div>
 }
