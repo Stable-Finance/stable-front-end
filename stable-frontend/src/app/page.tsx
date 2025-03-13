@@ -408,7 +408,7 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
 
 function LoggedInUser() {
   const store = useWalletStore()
-  const { login } = usePrivy()
+  const { login, linkWallet } = usePrivy()
   const { ready, wallets } = useWallets()
   const [is_open, set_is_open] = useState(false)
 
@@ -437,30 +437,40 @@ function LoggedInUser() {
   return <div className="flex gap-2 items-center">
     <USDXDisplay addr={addr} />
     <Modal onCancel={() => set_is_open(false)} open={is_open} footer={false}>
-      {store.wallets.map((w, i) =>
-        <button
-          key={i}
-          className="p-1 hover:bg-[#c89116] rounded-sm font-mono hover:font-bold cursor-pointer"
-          onClick={() => {
-            store.set_current_wallet(i)
-            set_is_open(false)
-          }}
-        >
-          {w.address}
-        </button>)}
+      <div className="w-full h-full flex flex-col justify-center items-center gap-2">
+        {store.wallets.map((w, i) =>
+          <button
+            key={i}
+            className="p-1 hover:bg-[#c89116] rounded-sm font-mono hover:font-bold cursor-pointer"
+            onClick={() => {
+              store.set_current_wallet(i)
+              set_is_open(false)
+            }}
+          >
+            {w.address}
+          </button>)}
+          <div>
+            <button
+              className="bg-[#c89116] rounded-sm p-2 cursor-pointer"
+              onClick={() => linkWallet()}
+            >
+              Login With Privvy
+            </button>
+          </div>
+      </div>
     </Modal>
     <div
       className="bg-[#c89116] rounded-md p-2 gap-2 flex items-center cursor-pointer"
       onClick={() => set_is_open(true)}
     >
       <p className="leading-none font-mono">{`${addr.slice(0, 6)}...${addr.slice(38)}`}</p>
-      <button onClick={() => navigator.clipboard.writeText(addr)}>
-        {copied ?
-          <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
-          <ClipboardIcon onClick={() => set_copied(true)} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
-        }
-      </button>
     </div>
+    <button onClick={() => navigator.clipboard.writeText(addr)}>
+      {copied ?
+        <ClipboardDocumentCheckIcon strokeWidth={2} className="w-4 h-4 cursor-pointer"/> :
+        <ClipboardIcon onClick={() => set_copied(true)} strokeWidth="2" className="w-4 h-4 cursor-pointer" />
+      }
+    </button>
   </div>
 }
 
