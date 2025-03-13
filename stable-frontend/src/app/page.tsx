@@ -4,47 +4,40 @@
 // #ffd577 c89116 f9da79 b79132 e6e6e6
 
 import { ConnectedWallet, usePrivy, useWallets } from "@privy-io/react-auth";
-import { ClipboardDocumentCheckIcon, ClipboardIcon, QuestionMarkCircleIcon, XCircleIcon } from '@heroicons/react/24/outline'
+import { ClipboardDocumentCheckIcon, ClipboardIcon, QuestionMarkCircleIcon } from '@heroicons/react/24/outline'
 import { InputNumber, Modal } from "antd";
 import { useEffect, useState } from "react";
-import { createWalletClient, custom, Hex, WalletClient } from "viem";
+import { createPublicClient, createWalletClient, custom, Hex, WalletClient } from "viem";
 import { monadTestnet } from "wagmi/chains";
 
 import nft_abi from "@/nft_abi.json"
 import usdx_abi from "@/usdx_abi.json"
-import { NFT_ADDR, USDC_ADDR, USDT_ADDR, USDX_ADDR } from "@/constants";
-import { ensure_tokens_approved, formatCurrency, get_properties, refresh_after_trx } from "@/utils";
-import { useBalance, useReadContract, useReadContracts } from "wagmi";
+import waifu_abi from "@/waifu_abi.json"
+
+import { NFT_ADDR, USDC_ADDR, USDT_ADDR, USDX_ADDR, WAIFU_ADDR } from "@/constants";
+import { ensure_tokens_approved, formatCurrency, refresh_after_trx } from "@/utils";
+import { useReadContract, useReadContracts } from "wagmi";
 import { create } from 'zustand'
 import toast from "react-hot-toast";
-
-export default function Home() {
-  return (
-    <div className="h-screen w-full flex flex-col justify-center items-center bg-[#e6e6e6] ">
-      <div className="text-black border-4 rounded-xl border-[#c89116] max-w-2xl w-full p-4 flex flex-col gap-4">
-        <div className="flex items-center">
-          <h2 className="font-extrabold text-2xl mr-2">Stable Protocol</h2>
-          <ContractAddressesPopup />
-          <div className="ml-auto">
-            <LoggedInUser />
-          </div>
-        </div>
-        <WithWallet />
-      </div>
-    </div>
-  );
-}
 
 interface WalletStore {
   current_addr: string | null
   current_wallet: ConnectedWallet | null
   wallets: ConnectedWallet[]
+
+  owns_property: boolean,
+  set_owns_property: () => void,
+
   set_wallets: (wallets: ConnectedWallet[]) => void
   set_current_wallet: (idx: number) => void
 }
 const useWalletStore = create<WalletStore>(set => ({
   current_addr: null,
   current_wallet: null,
+
+  owns_property: false,
+  set_owns_property: () => set({ owns_property: true }),
+
   wallets: [],
   set_wallets: wallets => set({ wallets }),
   set_current_wallet: idx => set(state => ({
@@ -52,6 +45,154 @@ const useWalletStore = create<WalletStore>(set => ({
     current_wallet: state.wallets[idx]
   }))
 }))
+
+export default function Home() {
+  return (
+    <div className="h-screen w-full flex flex-col justify-center items-center bg-[#e6e6e6] ">
+      <div className="grid grid-cols-[2fr_1fr] border-4 rounded-xl max-w-5xl w-full border-[#c89116]">
+        <div className="text-black border-r-4 border-[#c89116] p-4 flex flex-col gap-4">
+          <div className="flex items-center">
+            <h2 className="font-extrabold text-2xl mr-2">Stable Protocol</h2>
+            <ContractAddressesPopup />
+            <div className="ml-auto">
+              <LoggedInUser />
+            </div>
+          </div>
+          <WithWallet />
+        </div>
+        <WaifuRealtorsMint />
+      </div>
+    </div>
+  );
+}
+
+function WaifuRealtorsMint() {
+  const store = useWalletStore()
+  const [ids, set_ids] = useState<bigint[]>([])
+
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const wallet = store.current_wallet!
+        await wallet.switchChain(monadTestnet.id)
+        const provider = await wallet.getEthereumProvider()
+        const viem_client = createWalletClient({
+          account: wallet.address as Hex,
+          chain: monadTestnet,
+          transport: custom(provider)
+        })
+        const public_client = createPublicClient({
+          chain: monadTestnet,
+          transport: custom(provider)
+        })
+        const n_owned: bigint = await public_client.readContract({
+          abi: waifu_abi,
+          address: WAIFU_ADDR,
+          functionName: "balanceOf",
+          args: [wallet.address]
+        })
+        const ids: bigint[] = await Promise.all(Array.from({ length: Number(n_owned) }).map((_, i) => {
+          return public_client.readContract({
+            abi: waifu_abi,
+            address: WAIFU_ADDR,
+            functionName: "tokenOfOwnerByIndex",
+            args: [wallet.address, BigInt(i)]
+          })
+        }))
+        set_ids(ids)
+      } catch (_) {}
+    })()
+  }, [store.current_wallet])
+
+  return <div className="flex flex-col gap-2 p-4 items-center w-full text-center">
+    <h2 className="text-nowrap text-black font-bold text-xl text-center">Waifu Realtors Mint</h2>
+    <a
+      className="text-blue-600 underline"
+      href={`https://magiceden.us/collections/monad-testnet/${WAIFU_ADDR}`}
+      target="_blank"
+    >
+      Magic Eden Collection
+    </a>
+    <div>
+      {
+        store.owns_property ?
+          <div>
+            <button
+              onClick={async () => {
+                const wallet = store.current_wallet!
+                await wallet.switchChain(monadTestnet.id)
+                const provider = await wallet.getEthereumProvider()
+                const viem_client = createWalletClient({
+                  account: wallet.address as Hex,
+                  chain: monadTestnet,
+                  transport: custom(provider)
+                })
+                const public_client = createPublicClient({
+                  chain: monadTestnet,
+                  transport: custom(provider)
+                })
+                refresh_after_trx(async () => {
+                  const is_whitelisted = await public_client.readContract({
+                    abi: waifu_abi,
+                    address: WAIFU_ADDR,
+                    functionName: "isWhitelisted",
+                    args: [wallet.address],
+                  })
+                  const whitelist_val = 1_000_000_000_000_000_000n / 10n
+                  const regular_val = 3n * 1_000_000_000_000_000_000n / 10n
+                  return viem_client.writeContract({
+                    abi: waifu_abi,
+                    address: WAIFU_ADDR,
+                    account: wallet.address as Hex,
+                    functionName: "mint",
+                    value: is_whitelisted ? whitelist_val : regular_val,
+                    args: []
+                  })
+                })
+              }}
+              className="text-black font-bold bg-[#c89133] px-2 py-1 rounded-sm cursor-pointer mt-4"
+            >
+              Mint
+            </button>
+          </div> :
+          <>
+          <p className="text-black">Deposit a Property to Access the Mint</p>
+          {
+            ids.map(id => <button
+              key={Number(id)}
+              onClick={async () => {
+                const wallet = store.current_wallet!
+                await wallet.switchChain(monadTestnet.id)
+                const provider = await wallet.getEthereumProvider()
+                const viem_client = createWalletClient({
+                  account: wallet.address as Hex,
+                  chain: monadTestnet,
+                  transport: custom(provider)
+                })
+                ensure_tokens_approved(
+                  viem_client,
+                  USDX_ADDR,
+                  1_000_000n,
+                  async () => {
+                    await viem_client.writeContract({
+                      abi: waifu_abi,
+                      address: WAIFU_ADDR,
+                      functionName: "unblur",
+                      args: [id]
+                    })
+                  }
+                )
+              }}
+            >
+              Unblur #{Number(id)}
+            </button>)
+          }
+          </>
+      }
+    </div>
+  </div>
+}
+
 
 function ContractAddressesPopup() {
   const [is_open, set_is_open] = useState(false)
@@ -137,6 +278,10 @@ function BorrowSection({ viemClient, user_addr, latest_hash }: { viemClient: Wal
 }
 
 function HasNFTSection({ viemClient, user_addr, latest_hash, n_nfts }: { viemClient: WalletClient, user_addr: string, latest_hash: string, n_nfts: number }) {
+  const store = useWalletStore()
+  if (!store.owns_property) {
+    store.set_owns_property()
+  }
   const { data, isLoading, isError } = useReadContracts({
     contracts: Array.from({ length: n_nfts }).map((_, i) => ({
       abi: nft_abi,
@@ -485,7 +630,7 @@ function MintSection({ viemClient, user_addr, on_trx }: { viemClient: WalletClie
 
 function LoggedInUser() {
   const store = useWalletStore()
-  const { login, linkWallet } = usePrivy()
+  const { login, linkWallet, user } = usePrivy()
   const { ready, wallets } = useWallets()
   const [is_open, set_is_open] = useState(false)
 
@@ -529,7 +674,13 @@ function LoggedInUser() {
           <div>
             <button
               className="bg-[#c89116] rounded-sm p-2 cursor-pointer font-bold"
-              onClick={() => linkWallet()}
+              onClick={() => {
+                if (user) {
+                  linkWallet()
+                } else {
+                  login()
+                }
+              }}
             >
               Connect Another Wallet
             </button>
