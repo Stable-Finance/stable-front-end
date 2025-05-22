@@ -1,36 +1,261 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🌐 Stable Protocol Web App
 
-## Getting Started
+The main web application for Stable Protocol - a decentralized real estate finance platform.
 
-First, run the development server:
+## 🚀 Quick Start
 
+### Prerequisites
+- Node.js 18+
+- pnpm (install globally: `npm install -g pnpm`)
+- Para account ([getpara.com](https://getpara.com))
+
+### Installation
+
+#### Option 1: From Monorepo Root (Recommended)
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# Install all dependencies
+pnpm install
+
+# Start web app development
+pnpm dev:web
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+#### Option 2: Individual App Setup
+1. **Navigate to web app**
+   ```bash
+   cd apps/web
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. **Install dependencies**
+   ```bash
+   pnpm install
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. **Environment setup**
+   ```bash
+   cp .env.example .env.local
+   ```
 
-## Learn More
+4. **Configure environment variables**
+   Edit `.env.local` with your actual values:
+   ```env
+   NEXT_PUBLIC_PARA_API_KEY=your_para_api_key
+   NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x...
+   NEXT_PUBLIC_USDX_CONTRACT_ADDRESS=0x...
+   NEXT_PUBLIC_WAIFU_CONTRACT_ADDRESS=0x...
+   NEXT_PUBLIC_BLOCKVISION_API_KEY=your_api_key
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+5. **Start development server**
+   ```bash
+   pnpm dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## 🏗️ Project Structure
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── layout.tsx         # Root layout
+│   ├── page.tsx           # Home page
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── auth/              # Authentication components
+│   ├── marketing/         # Landing page components
+│   ├── modals/            # Modal components
+│   ├── nft/               # NFT-related components
+│   ├── property/          # Property components
+│   ├── protocol/          # Protocol dashboard
+│   ├── providers/         # Context providers
+│   ├── ui/                # UI components
+│   └── wallet/            # Wallet components
+├── hooks/                 # Custom React hooks
+├── lib/                   # Utilities and store
+└── constants.ts           # Configuration constants
+```
 
-## Deploy on Vercel
+## 🧩 Key Components
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Authentication
+- **`AuthGate`**: Controls access based on authentication state
+- **`ParaProviders`**: Para SDK integration
+- **`LandingPage`**: Marketing content for unauthenticated users
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Protocol Interface
+- **`ProtocolDashboard`**: Main protocol dashboard
+- **`PropertyMinter`**: NFT property minting interface
+- **`WalletConnection`**: Wallet management
+- **`ContractAddresses`**: Display contract information
+
+### Modals
+- **`BorrowModal`**: USDX borrowing interface
+- **`LendModal`**: USDX lending interface
+- **`PaymentModal`**: Interest payment interface
+
+## 🔧 Development Scripts
+
+#### From Monorepo Root
+```bash
+# Development
+pnpm dev:web         # Start web app dev server
+pnpm build:web       # Build web app for production
+pnpm start:web       # Start web app production server
+
+# Code Quality
+pnpm lint:web        # Run ESLint on web app
+pnpm lint:fix:web    # Fix web app linting issues
+pnpm type-check:web  # TypeScript checking on web app
+
+# Utilities
+pnpm clean:web       # Clean web app build artifacts
+pnpm preview:web     # Build and preview web app
+```
+
+#### From apps/web Directory
+```bash
+# Development
+pnpm dev             # Start dev server
+pnpm build           # Build for production
+pnpm start           # Start production server
+
+# Code Quality
+pnpm lint            # Run ESLint
+pnpm lint:fix        # Fix linting issues
+pnpm type-check      # TypeScript checking
+
+# Utilities
+pnpm clean           # Clean build artifacts
+pnpm preview         # Build and preview
+pnpm export          # Export static site
+```
+
+## 🌐 Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `NEXT_PUBLIC_PARA_API_KEY` | Para authentication API key | ✅ |
+| `NEXT_PUBLIC_NFT_CONTRACT_ADDRESS` | Property NFT contract | ✅ |
+| `NEXT_PUBLIC_USDX_CONTRACT_ADDRESS` | USDX token contract | ✅ |
+| `NEXT_PUBLIC_WAIFU_CONTRACT_ADDRESS` | Waifu protocol contract | ✅ |
+| `NEXT_PUBLIC_BLOCKVISION_API_KEY` | Blockchain data API | ✅ |
+| `NEXT_PUBLIC_CHAIN_ID` | Network chain ID (41991) | ✅ |
+| `NEXT_PUBLIC_RPC_URL` | RPC endpoint URL | ✅ |
+
+## 🎨 Styling
+
+### Design System
+- **Shadcn UI**: Component library
+- **Tailwind CSS**: Utility-first CSS
+- **CSS Variables**: Theme customization
+- **Dark Mode**: Automatic theme switching
+
+### Color Palette
+- **Primary**: Amber/Gold theme
+- **Background**: Gradient amber to orange
+- **Dark Mode**: Gray scale with amber accents
+
+## 🔗 Web3 Integration
+
+### Blockchain Stack
+- **Viem**: Type-safe Ethereum client
+- **Wagmi**: React hooks for Ethereum
+- **Para SDK**: Wallet authentication
+- **Zustand**: State management
+
+### Supported Networks
+- **Monad Testnet**: Primary network
+- Chain ID: `41991`
+- RPC: `https://testnet-rpc.monad.xyz`
+
+## 📦 Deployment
+
+### Vercel (Recommended)
+```bash
+# Build command
+pnpm build
+
+# Output directory
+.next
+
+# Environment variables
+# Add all NEXT_PUBLIC_* variables
+```
+
+### Docker
+```dockerfile
+FROM node:18-alpine
+
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+
+COPY . .
+RUN npm run build
+
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+### Static Export
+```bash
+npm run export
+# Outputs to 'out' directory
+```
+
+## 🧪 Testing
+
+```bash
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+
+# Build test
+npm run build
+```
+
+## 🚨 Troubleshooting
+
+### Common Issues
+
+**Build Errors**
+```bash
+# Clear cache
+npm run clean
+rm -rf node_modules .next
+npm install
+```
+
+**Environment Variables**
+- Ensure all `NEXT_PUBLIC_*` variables are set
+- Check for typos in variable names
+- Verify API keys are valid
+
+**Web3 Connection**
+- Verify wallet is on Monad testnet
+- Check RPC endpoint connectivity
+- Ensure contract addresses are correct
+
+**Para Authentication**
+- Verify Para API key is valid
+- Check Para service status
+- Ensure proper SDK version
+
+## 📚 Documentation
+
+- [Component Documentation](./docs/components.md)
+- [API Reference](./docs/api.md)
+- [Deployment Guide](./docs/deployment.md)
+
+## 🤝 Contributing
+
+1. Follow the coding standards
+2. Ensure TypeScript compliance
+3. Test on multiple devices
+4. Add proper error handling
+5. Update documentation
+
+---
+
+For more information, see the [main project README](../../README.md).

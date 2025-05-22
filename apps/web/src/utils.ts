@@ -1,11 +1,17 @@
+import { clsx, type ClassValue } from "clsx"
+import { twMerge } from "tailwind-merge"
 import { getPublicClient } from "wagmi/actions"
 import { config } from "./config"
 import { Hex, WalletClient } from "viem"
 import toast from "react-hot-toast"
 
 import erc20_abi from "./erc20_abi.json"
-import { NFT_ADDR } from "./constants";
+import { NFT_ADDR, BLOCKVISION_API_KEY } from "./constants";
 import { monadTestnet } from "viem/chains";
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
+}
 
 export async function get_properties(address: string) {
     const url = new URL("https://api.blockvision.org/v2/monad/account/nfts")
@@ -15,7 +21,7 @@ export async function get_properties(address: string) {
         {
             headers: {
                 "Accept": "application/json",
-                "X-Api-Key": "2uDur6i5hwYl57Eu5tFLWwIQzc7"
+                "X-Api-Key": BLOCKVISION_API_KEY
             }
         }
     )
