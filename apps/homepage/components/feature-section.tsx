@@ -78,12 +78,12 @@ export function FeatureSection() {
                 </div>
               </motion.div>
             </div>
-            <Link href="/how-it-works">
+            {/* <Link href="/how-it-works">
               <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 group mt-8">
                 Learn More{' '}
                 <ChevronRight className="ml-2 h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
               </Button>
-            </Link>
+            </Link> */}
           </motion.div>
           <motion.div className="relative flex items-center justify-center w-full md:h-[400px] h-64 rounded-lg overflow-hidden" variants={itemVariants}>
           <Image

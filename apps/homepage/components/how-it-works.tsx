@@ -133,7 +133,7 @@ export function HowItWorks() {
                     const el = document.getElementById('waitlist')
                     if (el) el.scrollIntoView({ behavior: 'smooth' })
                   }}
-                  className='bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 rounded-md px-4 py-2 text-sm font-medium'
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 rounded-md px-4 py-2 text-sm font-medium"
                 >
                   Join Waitlist
                 </button>
@@ -191,11 +191,16 @@ export function HowItWorks() {
                 </motion.div>
               </motion.div>
               <motion.div variants={itemVariants} className="flex justify-center mt-8">
-                <Link href="/apply">
-                  <Button className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300">
-                    Apply Now
-                  </Button>
-                </Link>
+                <button
+                  type='button'
+                  onClick={() => {
+                    const el = document.getElementById('waitlist')
+                    if (el) el.scrollIntoView({ behavior: 'smooth' })
+                  }}
+                  className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 rounded-md px-4 py-2 text-sm font-medium"
+                >
+                  Join Waitlist
+                </button>
               </motion.div>
             </TabsContent>
           </Tabs>
