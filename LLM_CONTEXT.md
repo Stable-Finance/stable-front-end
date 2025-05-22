@@ -25,7 +25,8 @@ Stable Protocol is a **decentralized real estate finance platform** built on Mon
 ```
 stable-frontend/
 ├── apps/
-│   └── web/                 # Main Next.js application (PRIMARY FOCUS)
+│   ├── homepage/            # Marketing website (Next.js)
+│   └── web/                 # Main DeFi application (Next.js - PRIMARY FOCUS)
 ├── packages/                # Shared packages (currently minimal)
 │   ├── ui/                  # Shared UI components
 │   ├── eslint-config/       # ESLint configuration
@@ -254,15 +255,20 @@ const result = await contracts.nftContract.read.balanceOf([address])
 ### pnpm Workspace Commands
 ```bash
 # From root directory:
-pnpm dev:web          # Start web app
-pnpm build:web        # Build web app
-pnpm lint:web         # Lint web app
-pnpm type-check:web   # TypeScript check
+pnpm dev              # Start all apps in parallel
+pnpm dev:web          # Start DeFi app only
+pnpm dev:homepage     # Start homepage only
+pnpm build            # Build all apps
+pnpm build:web        # Build DeFi app only
+pnpm build:homepage   # Build homepage only
+pnpm lint             # Lint all apps
+pnpm type-check:all   # TypeScript check all apps
 
-# From apps/web directory:
-pnpm dev              # Start development
-pnpm build            # Build for production
-pnpm lint             # Run ESLint
+# From individual app directories:
+cd apps/web && pnpm dev          # Start DeFi development
+cd apps/homepage && pnpm dev     # Start homepage development
+pnpm build            # Build specific app
+pnpm lint             # Lint specific app
 ```
 
 ## 🚀 Deployment Context
@@ -355,17 +361,22 @@ pnpm lint             # Run ESLint
 pnpm install
 
 # Start development (from root)
-pnpm dev:web
+pnpm dev              # All apps
+pnpm dev:web          # DeFi app only
+pnpm dev:homepage     # Homepage only
 
 # Build for production
-pnpm build:web
+pnpm build            # All apps
+pnpm build:web        # DeFi app only
+pnpm build:homepage   # Homepage only
 
 # Fix common issues
 pnpm lint:fix:web
-pnpm type-check:web
+pnpm lint:fix:homepage
+pnpm type-check:all
 
 # Clean and rebuild
-pnpm clean:web && pnpm build:web
+pnpm clean && pnpm build
 ```
 
 ---

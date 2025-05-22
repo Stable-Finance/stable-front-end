@@ -26,7 +26,8 @@ This is a monorepo containing:
 ```
 stable-frontend/
 ├── apps/
-│   └── web/                 # Main Next.js application
+│   ├── homepage/            # Marketing website (Next.js)
+│   └── web/                 # Main DeFi application (Next.js)
 └── packages/
     ├── ui/                  # Shared UI components
     ├── eslint-config/       # Shared ESLint configuration
@@ -84,15 +85,21 @@ stable-frontend/
 
 6. **Start Development Server**
    ```bash
-   # From project root
-   pnpm dev:web
-   
-   # Or navigate to specific app
-   cd apps/web
+   # Start all apps in parallel
    pnpm dev
+   
+   # Or start specific apps
+   pnpm dev:web        # DeFi application (port 3000)
+   pnpm dev:homepage   # Marketing website (port 3001)
+   
+   # Or navigate to specific app directory
+   cd apps/web && pnpm dev         # DeFi app
+   cd apps/homepage && pnpm dev    # Homepage
    ```
 
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   Open the applications:
+   - **DeFi App**: [http://localhost:3000](http://localhost:3000)
+   - **Homepage**: [http://localhost:3001](http://localhost:3001)
 
 ## 🔧 Development
 
@@ -101,34 +108,40 @@ stable-frontend/
 #### Monorepo Scripts (from root)
 ```bash
 # Development
-pnpm dev:web         # Start web app development server
-pnpm build:web       # Build web app for production
-pnpm start:web       # Start web app production server
+pnpm dev             # Start all apps in parallel
+pnpm dev:web         # Start DeFi app only
+pnpm dev:homepage    # Start homepage only
+
+# Build
+pnpm build           # Build all apps
+pnpm build:web       # Build DeFi app only
+pnpm build:homepage  # Build homepage only
+
+# Production
+pnpm start:web       # Start DeFi app production server
+pnpm start:homepage  # Start homepage production server
 
 # Code Quality
-pnpm lint:web        # Run ESLint on web app
-pnpm type-check:web  # TypeScript checking on web app
+pnpm lint            # Lint all apps
+pnpm lint:web        # Lint DeFi app only
+pnpm lint:homepage   # Lint homepage only
+pnpm type-check:all  # TypeScript check all apps
 
-# Global utilities
+# Utilities
 pnpm install         # Install all dependencies
 pnpm clean           # Clean all build files
 ```
 
-#### Individual App Scripts (from apps/web)
+#### Individual App Scripts (from app directories)
 ```bash
-# Development
+# From apps/web/ or apps/homepage/
 pnpm dev             # Start development server
 pnpm build           # Build for production
 pnpm start           # Start production server
-
-# Code Quality
 pnpm lint            # Run ESLint
 pnpm lint:fix        # Fix ESLint errors
 pnpm type-check      # TypeScript type checking
-
-# Utilities
 pnpm clean           # Clean build files
-pnpm preview         # Build and start preview
 ```
 
 ### Project Architecture
@@ -188,7 +201,7 @@ pnpm preview         # Build and start preview
 
 1. **Build Settings**
    - Base directory: `apps/web`
-   - Build command: `npm run build && npm run export`
+   - Build command: `pnpm build && pnpm export`
    - Publish directory: `apps/web/out`
 
 2. **Environment Variables**
@@ -203,11 +216,11 @@ WORKDIR /app
 
 # Dependencies
 COPY package*.json ./
-RUN npm ci --only=production
+RUN pnpm install --prod --frozen-lockfile
 
 # Build
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # Production
 FROM node:18-alpine AS runner
@@ -217,7 +230,7 @@ COPY --from=base /app/public ./public
 COPY --from=base /app/package.json ./package.json
 
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
 ```
 
 ## 🔗 Blockchain Integration
@@ -255,13 +268,13 @@ CMD ["npm", "start"]
 
 ```bash
 # Run tests (when implemented)
-npm run test
+pnpm test
 
 # Type checking
-npm run type-check
+pnpm type-check
 
 # Linting
-npm run lint
+pnpm lint
 ```
 
 ## 📝 Environment Variables
@@ -305,9 +318,9 @@ npm run lint
 **Build Errors**
 ```bash
 # Clear cache and reinstall
-npm run clean
-rm -rf node_modules package-lock.json
-npm install
+pnpm clean
+rm -rf node_modules pnpm-lock.yaml
+pnpm install
 ```
 
 **Environment Variables**

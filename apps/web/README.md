@@ -16,8 +16,12 @@ The main web application for Stable Protocol - a decentralized real estate finan
 # Install all dependencies
 pnpm install
 
-# Start web app development
-pnpm dev:web
+# Start all apps
+pnpm dev
+
+# Or start specific apps
+pnpm dev:web        # DeFi app (port 3000)
+pnpm dev:homepage   # Homepage (port 3001)
 ```
 
 #### Option 2: Individual App Setup
@@ -37,13 +41,26 @@ pnpm dev:web
    ```
 
 4. **Configure environment variables**
-   Edit `.env.local` with your actual values:
+   Create `.env.local` with your actual values:
    ```env
-   NEXT_PUBLIC_PARA_API_KEY=your_para_api_key
+   # Para Authentication (Required)
+   NEXT_PUBLIC_PARA_API_KEY=your_para_api_key_here
+   
+   # Smart Contract Addresses (Required - Monad Testnet)
    NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x...
    NEXT_PUBLIC_USDX_CONTRACT_ADDRESS=0x...
    NEXT_PUBLIC_WAIFU_CONTRACT_ADDRESS=0x...
-   NEXT_PUBLIC_BLOCKVISION_API_KEY=your_api_key
+   
+   # Blockchain Configuration (Required)
+   NEXT_PUBLIC_CHAIN_ID=41991
+   NEXT_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz
+   
+   # API Keys (Required)
+   NEXT_PUBLIC_BLOCKVISION_API_KEY=your_blockvision_api_key
+   
+   # Optional Configuration
+   NODE_ENV=development
+   NEXT_PUBLIC_DEBUG=false
    ```
 
 5. **Start development server**
@@ -187,18 +204,18 @@ FROM node:18-alpine
 
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN pnpm install --prod --frozen-lockfile
 
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
 ```
 
 ### Static Export
 ```bash
-npm run export
+pnpm export
 # Outputs to 'out' directory
 ```
 
@@ -206,13 +223,13 @@ npm run export
 
 ```bash
 # Type checking
-npm run type-check
+pnpm type-check
 
 # Linting
-npm run lint
+pnpm lint
 
 # Build test
-npm run build
+pnpm build
 ```
 
 ## 🚨 Troubleshooting
@@ -222,9 +239,9 @@ npm run build
 **Build Errors**
 ```bash
 # Clear cache
-npm run clean
+pnpm clean
 rm -rf node_modules .next
-npm install
+pnpm install
 ```
 
 **Environment Variables**

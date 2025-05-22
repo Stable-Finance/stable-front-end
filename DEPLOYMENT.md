@@ -31,7 +31,8 @@ This guide covers deployment strategies for the Stable Protocol applications, wi
 ```
 stable-frontend/
 ├── apps/
-│   └── web/                 # Next.js web application
+│   ├── homepage/            # Marketing website (Next.js)
+│   └── web/                 # DeFi application (Next.js)
 └── packages/
     ├── ui/                  # Shared UI components
     ├── eslint-config/       # Shared ESLint configuration
@@ -41,9 +42,12 @@ stable-frontend/
 ### Deployment Options
 
 #### Option 1: Deploy Specific App (Recommended)
-Deploy only the web app from the monorepo, which is more efficient and faster.
+Deploy individual apps (homepage or web) from the monorepo, which is more efficient and faster.
 
-#### Option 2: Deploy Entire Monorepo
+#### Option 2: Deploy Multiple Apps
+Deploy both homepage and web app from the same repository to different services.
+
+#### Option 3: Deploy Entire Monorepo
 Deploy the entire monorepo structure (useful for full-stack applications).
 
 ## 🌐 Deployment Platforms
@@ -73,16 +77,20 @@ Deploy the entire monorepo structure (useful for full-stack applications).
    vercel login
    ```
 
-2. **Deploy from Web App Directory**
+2. **Deploy from Specific App Directory**
    ```bash
-   # Navigate to web app
+   # Deploy DeFi web app
    cd apps/web
+   vercel
    
-   # Deploy web app specifically
+   # Or deploy marketing homepage
+   cd apps/homepage
    vercel
    ```
 
-3. **Web App Configuration (vercel.json in apps/web/)**
+3. **App-Specific Configuration**
+   
+   **DeFi App (vercel.json in apps/web/)**
    ```json
    {
      "name": "stable-protocol-web",
@@ -90,6 +98,18 @@ Deploy the entire monorepo structure (useful for full-stack applications).
      "outputDirectory": ".next",
      "installCommand": "pnpm install",
      "devCommand": "pnpm dev",
+     "framework": "nextjs"
+   }
+   ```
+
+   **Homepage (vercel.json in apps/homepage/)**
+   ```json
+   {
+     "name": "stable-protocol-homepage",
+     "buildCommand": "pnpm build",
+     "outputDirectory": ".next",
+     "installCommand": "pnpm install",
+     "devCommand": "pnpm dev --port 3001",
      "framework": "nextjs"
    }
    ```
@@ -204,16 +224,16 @@ Deploy the entire monorepo structure (useful for full-stack applications).
 1. **Amplify Configuration for apps/web/amplify.yml**
    ```yaml
    # apps/web/amplify.yml
-   version: 1
-   frontend:
-     phases:
-       preBuild:
-         commands:
-           - npm install -g pnpm
-           - pnpm install
-       build:
-         commands:
-           - pnpm build
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - corepack enable
+        - pnpm install
+    build:
+      commands:
+        - pnpm build
      artifacts:
        baseDirectory: .next
        files:
@@ -235,7 +255,7 @@ Deploy the entire monorepo structure (useful for full-stack applications).
          phases:
            preBuild:
              commands:
-               - npm install -g pnpm
+               - corepack enable
                - pnpm install
            build:
              commands:
@@ -265,7 +285,7 @@ Deploy the entire monorepo structure (useful for full-stack applications).
    WORKDIR /app
    
    COPY package.json package-lock.json* ./
-   RUN npm ci --only=production && npm cache clean --force
+   RUN pnpm install --prod --frozen-lockfile
    
    # Rebuild the source code only when needed
    FROM base AS builder
@@ -273,7 +293,7 @@ Deploy the entire monorepo structure (useful for full-stack applications).
    COPY --from=deps /app/node_modules ./node_modules
    COPY . .
    
-   RUN npm run build
+   RUN pnpm build
    
    # Production image, copy all the files and run next
    FROM base AS runner
@@ -607,7 +627,7 @@ module.exports = {
 3. **Memory Issues**
    ```bash
    # Increase Node.js memory limit
-   NODE_OPTIONS="--max-old-space-size=4096" npm run build
+   NODE_OPTIONS="--max-old-space-size=4096" pnpm build
    ```
 
 4. **Dependency Conflicts**
