@@ -1,0 +1,24 @@
+[build]
+  base = "apps/web"
+  command = "cd ../.. && pnpm install && pnpm build:web && cd apps/web && pnpm export"
+  publish = "apps/web/out"
+
+[build.environment]
+  NODE_VERSION = "18"
+  PNPM_VERSION = "8"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "origin-when-cross-origin"
+    X-XSS-Protection = "1; mode=block"
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  directory = "apps/web/netlify/functions" 
