@@ -1,12 +1,21 @@
 {
-  "name": "shadcn-ui-monorepo",
-  "version": "0.0.1",
+  "name": "stable-frontend",
   "private": true,
   "scripts": {
-    "build": "turbo build",
-    "dev": "turbo dev --filter=homepage",
-    "lint": "turbo lint",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "dev:web": "pnpm --filter=web dev",
+    "build:web": "pnpm --filter=web build",
+    "start:web": "pnpm --filter=web start",
+    "lint:web": "pnpm --filter=web lint",
+    "lint:fix:web": "pnpm --filter=web lint:fix",
+    "type-check:web": "pnpm --filter=web type-check",
+    "clean:web": "pnpm --filter=web clean",
+    "preview:web": "pnpm --filter=web preview",
+    "test:web": "pnpm --filter=web test",
+    "clean": "pnpm --filter=web clean && rm -rf node_modules",
+    "install:all": "pnpm install",
+    "dev": "pnpm dev:web",
+    "build": "pnpm build:web",
+    "postinstall": "echo 'Dependencies installed successfully'"
   },
   "devDependencies": {
     "@workspace/eslint-config": "workspace:*",
@@ -15,7 +24,7 @@
     "turbo": "^2.4.2",
     "typescript": "5.7.3"
   },
-  "packageManager": "pnpm@10.4.1",
+  "packageManager": "pnpm@8.0.0",
   "engines": {
     "node": ">=20"
   },

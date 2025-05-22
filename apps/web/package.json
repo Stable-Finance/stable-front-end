@@ -1,25 +1,38 @@
 {
-  "name": "stable-frontend",
+  "name": "web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "lint:fix": "next lint --fix",
+    "type-check": "tsc --noEmit",
+    "preview": "next build && next start",
+    "clean": "rm -rf .next out dist",
+    "export": "next build && next export",
+    "analyze": "ANALYZE=true next build",
+    "test": "echo \"No tests specified\" && exit 0",
+    "prepare": "husky install || true"
   },
   "dependencies": {
+    "@getpara/react-sdk": "^1.16.0",
     "@heroicons/react": "^2.2.0",
-    "@privy-io/react-auth": "^2.6.2",
-    "@tanstack/react-query": "^5.67.3",
-    "antd": "^5.24.3",
+    "@radix-ui/react-slot": "^1.2.3",
+    "@tanstack/react-query": "^5.76.2",
+    "antd": "^5.25.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.511.0",
     "next": "15.2.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
-    "viem": "^2.23.9",
-    "wagmi": "^2.14.13",
-    "zustand": "^5.0.3"
+    "tailwind-merge": "^3.3.0",
+    "viem": "^2.30.0",
+    "wagmi": "^2.15.4",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
@@ -30,6 +43,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.2.2",
     "tailwindcss": "^4",
+    "tw-animate-css": "^1.2.4",
     "typescript": "^5"
   }
 }
