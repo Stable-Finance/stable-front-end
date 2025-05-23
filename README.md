@@ -166,18 +166,13 @@ pnpm clean           # Clean build files
 
 ### Vercel (Recommended)
 
-#### Option 1: Deploy Web App Only
+#### Deploy Individual Apps
 1. **Connect Repository**
    - Import project to Vercel
-   - Select `apps/web` as root directory
-   - Vercel will automatically detect `vercel.json` configuration
+   - For web app: Select `apps/web` as root directory
+   - For homepage: Select `apps/homepage` as root directory
 
-#### Option 2: Deploy from Monorepo Root
-1. **Connect Repository**
-   - Import entire monorepo to Vercel
-   - Use root `vercel.json` configuration
-
-2. **Environment Variables (Both Options)**
+2. **Environment Variables**
    ```env
    NEXT_PUBLIC_PARA_API_KEY=your_production_api_key
    NEXT_PUBLIC_NFT_CONTRACT_ADDRESS=0x...
@@ -188,24 +183,14 @@ pnpm clean           # Clean build files
    NEXT_PUBLIC_RPC_URL=https://testnet-rpc.monad.xyz
    ```
 
-3. **Quick Deploy Commands**
+3. **Deploy Commands**
    ```bash
-   # Option 1: Deploy web app only
+   # Deploy web app
    cd apps/web && vercel
 
-   # Option 2: Deploy from root
-   vercel
+   # Deploy homepage
+   cd apps/homepage && vercel
    ```
-
-### Netlify
-
-1. **Build Settings**
-   - Base directory: `apps/web`
-   - Build command: `pnpm build && pnpm export`
-   - Publish directory: `apps/web/out`
-
-2. **Environment Variables**
-   Add the same environment variables as Vercel
 
 ### Docker Deployment
 
