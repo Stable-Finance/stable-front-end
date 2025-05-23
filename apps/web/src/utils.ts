@@ -82,10 +82,14 @@ export async function ensure_tokens_approved(
     }
 }
 
-export async function refresh_after_trx(cb: () => Promise<string>) {
+export async function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+export async function refresh_after_trx(transactionCall: () => Promise<string>) {
     try {
         const trx_hash = await toast.promise(
-            cb(),
+            transactionCall(),
             {
                 loading: "Signing Transaction...",
                 error: "Failed to Sign Transaction",
@@ -104,10 +108,12 @@ export async function refresh_after_trx(cb: () => Promise<string>) {
                     success: "Success! Reload page to update"
                 }
             )
-        } catch (_) {
-            window.location.reload(true)
+        } catch {
+            window.location.reload()
         }
-    } catch (_) {}
+    } catch {
+        // Handle transaction error silently
+    }
 }
 
 export const formatCurrency = new Intl.NumberFormat("en-US", {

@@ -3,16 +3,11 @@
 import { useEffect, useState } from "react"
 import { useModal } from "@getpara/react-sdk"
 import { useWalletStore } from "@/lib/store"
-import { createWalletClient, custom, type Hex, type WalletClient } from "viem"
-import { monadTestnet } from "wagmi/chains"
 
 // Create a wallet interface similar to Privy's ConnectedWallet
 interface ParaWallet {
   address: string
   chainId: number
-  walletClient?: WalletClient
-  switchChain: (chainId: number) => Promise<void>
-  getEthereumProvider: () => Promise<any>
 }
 
 export function useParaWallet() {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { createPublicClient, createWalletClient, custom, Hex, WalletClient } from "viem"
+import { createPublicClient, createWalletClient, custom, Hex, WalletClient, Abi } from "viem"
 import { monadTestnet } from "wagmi/chains"
 import { useReadContract, useReadContracts } from "wagmi"
 
@@ -71,8 +71,8 @@ export function usePropertyBalance(userAddress: string | null) {
 export function usePropertyTokens(userAddress: string | null, nftCount: number) {
   return useReadContracts({
     contracts: Array.from({ length: nftCount }).map((_, i) => ({
-      abi: nft_abi as any,
-      address: NFT_ADDR as Hex,
+      abi: nft_abi as Abi,
+      address: NFT_ADDR,
       functionName: "tokenOfOwnerByIndex",
       args: [userAddress, BigInt(i)]
     })),
@@ -85,8 +85,8 @@ export function usePropertyTokens(userAddress: string | null, nftCount: number) 
 export function usePropertyURIs(tokenIds: bigint[]) {
   return useReadContracts({
     contracts: tokenIds.map((nftId) => ({
-      abi: nft_abi as any,
-      address: NFT_ADDR as Hex,
+      abi: nft_abi as Abi,
+      address: NFT_ADDR,
       functionName: "tokenURI",
       args: [nftId],
     })),

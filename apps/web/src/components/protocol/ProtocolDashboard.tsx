@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { WalletClient } from "viem"
 
 import { useWallet } from "@/hooks/useWallet"
 import { useViemClient } from "@/hooks/useContracts"
@@ -23,7 +24,7 @@ export function ProtocolDashboard() {
   return <ProtocolInterface wallet={currentWallet} userAddress={currentAddress} />
 }
 
-function ProtocolInterface({ wallet, userAddress }: { wallet: any, userAddress: string }) {
+function ProtocolInterface({ wallet, userAddress }: { wallet: WalletClient, userAddress: string }) {
   const [latestHash, setLatestHash] = useState("")
   const viemClient = useViemClient(wallet)
 

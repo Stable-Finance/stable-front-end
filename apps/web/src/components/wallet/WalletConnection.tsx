@@ -10,7 +10,7 @@ import { useWallet } from "@/hooks/useWallet"
 import { USDXBalance } from "./USDXBalance"
 
 export function WalletConnection() {
-  const { wallets, currentAddress, currentWallet, isReady, connectWallet, setCurrentWallet } = useWallet()
+  const { wallets, currentAddress, isReady, connectWallet, setCurrentWallet } = useWallet()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [copied, setCopied] = useState(false)
 

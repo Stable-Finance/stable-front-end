@@ -12,9 +12,17 @@ import { NFT_ADDR, USDX_ADDR, USDT_ADDR, USDC_ADDR } from "@/constants"
 import { formatCurrency, ensure_tokens_approved, refresh_after_trx } from "@/utils"
 import nft_abi from "@/nft_abi.json"
 
+interface PropertyData {
+  id: number
+  name: string
+  attributes: Array<{ value: string | number }>
+}
+
 interface RepayModalProps {
+  isOpen: boolean
+  onClose: () => void
   nftId: bigint
-  jsonData: any
+  jsonData: PropertyData
   viemClient: WalletClient
   userAddress: string
 }
@@ -22,7 +30,7 @@ interface RepayModalProps {
 export function RepayModal({ nftId, jsonData, viemClient, userAddress }: RepayModalProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [repayAmount, setRepayAmount] = useState("0")
-  const [token, setToken] = useState(USDX_ADDR)
+  const [token, setToken] = useState<string>(USDX_ADDR)
   
   const debt = BigInt(jsonData.attributes[2].value)
 

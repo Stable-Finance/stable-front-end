@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { WalletClient } from "viem"
+import Image from 'next/image'
 
 import { Card, CardContent } from "@/components/ui/card"
 import { formatCurrency } from "@/utils"
@@ -26,9 +27,11 @@ export function PropertyCard({ uri, userAddress, viemClient }: PropertyCardProps
     <>
       <Card variant="default" className="cursor-pointer hover:scale-105 transition-transform">
         <div onClick={() => setIsModalOpen(true)}>
-          <img
+          <Image
             src={jsonData.image}
             alt={jsonData.name}
+            width={200}
+            height={200}
             className="w-full h-48 object-cover rounded-t-xl"
           />
           <CardContent>
@@ -43,7 +46,7 @@ export function PropertyCard({ uri, userAddress, viemClient }: PropertyCardProps
       <PropertyDetailsModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        jsonData={jsonData}
+        property={jsonData}
         userAddress={userAddress}
         viemClient={viemClient}
       />

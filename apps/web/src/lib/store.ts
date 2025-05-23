@@ -4,7 +4,7 @@ import { create } from 'zustand'
 interface GenericWallet {
   address: string
   chainId?: number
-  [key: string]: any // Allow additional properties
+  [key: string]: unknown // Allow additional properties
 }
 
 interface WalletStore {

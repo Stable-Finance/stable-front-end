@@ -12,17 +12,24 @@ import { NFT_ADDR, USDX_ADDR, USDT_ADDR, USDC_ADDR } from "@/constants"
 import { formatCurrency, ensure_tokens_approved, refresh_after_trx } from "@/utils"
 import nft_abi from "@/nft_abi.json"
 
+interface PropertyData {
+  id: number
+  name: string
+  attributes: Array<{ value: string | number }>
+}
+
 interface InterestModalProps {
+  isOpen: boolean
+  onClose: () => void
   nftId: bigint
-  jsonData: any
+  jsonData: PropertyData
   viemClient: WalletClient
   userAddress: string
 }
 
-export function InterestModal({ nftId, jsonData, viemClient, userAddress }: InterestModalProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function InterestModal({ isOpen, onClose, nftId, jsonData, viemClient, userAddress }: InterestModalProps) {
   const [paymentAmount, setPaymentAmount] = useState("0")
-  const [token, setToken] = useState(USDX_ADDR)
+  const [token, setToken] = useState<string>(USDX_ADDR)
   
   const prepaidInterest = BigInt(jsonData.attributes[8].value)
   const unpaidInterest = BigInt(jsonData.attributes[9].value)
@@ -48,7 +55,7 @@ export function InterestModal({ nftId, jsonData, viemClient, userAddress }: Inte
           functionName: "makePayment"
         }))
       )
-      setIsOpen(false)
+      onClose()
     } catch (error) {
       console.error("Payment failed:", error)
     }
@@ -58,7 +65,7 @@ export function InterestModal({ nftId, jsonData, viemClient, userAddress }: Inte
     <>
       <Button
         variant="secondary"
-        onClick={() => setIsOpen(true)}
+        onClick={() => onClose()}
         className="w-full"
       >
         Make Payment
@@ -66,7 +73,7 @@ export function InterestModal({ nftId, jsonData, viemClient, userAddress }: Inte
       
       <Modal 
         open={isOpen} 
-        onClose={() => setIsOpen(false)}
+        onClose={() => onClose()}
         title={`Make Interest Payment - ${jsonData.name}`}
         size="lg"
       >
@@ -81,7 +88,7 @@ export function InterestModal({ nftId, jsonData, viemClient, userAddress }: Inte
           </div>
           
           <div className="text-sm text-amber-800 dark:text-amber-200 space-y-2">
-            <p>In the current implementation, interest works separately from principal. It is the borrower's responsibility that sufficient interest is deposited in the prepaid interest account to cover the interest payments that are calculated at the end of the month.</p>
+            <p>In the current implementation, interest works separately from principal. It is the borrowers responsibility that sufficient interest is deposited in the prepaid interest account to cover the interest payments that are calculated at the end of the month.</p>
             <p>Interest payments are automatically deducted at the end of the month. If there is not sufficient prepaid interest, the property will be hit with a missed payment. Three missed payments results in borrowers being unable to borrow against the property.</p>
             <p>If a property already has unpaid interest, interest payments will pay that off first before it goes into the prepaid interest.</p>
           </div>

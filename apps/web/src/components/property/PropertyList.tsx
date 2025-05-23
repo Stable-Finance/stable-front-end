@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import React, { useEffect } from 'react'
 import { WalletClient } from "viem"
 
 import { useWalletStore } from "@/lib/store"
@@ -16,8 +16,6 @@ interface PropertyListProps {
 }
 
 export function PropertyList({ userAddress, viemClient, latestHash }: PropertyListProps) {
-  const store = useWalletStore()
-  
   const { data: balance, isLoading: balanceLoading, isError: balanceError, refetch } = usePropertyBalance(userAddress)
   
   useEffect(() => {
