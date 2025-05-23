@@ -12,16 +12,16 @@ export function SiteHeader() {
       label: "Home",
       active: pathname === "/",
     },
-    {
-      href: "/about",
-      label: "About",
-      active: pathname === "/about",
-    },
-    {
-      href: "/how-it-works",
-      label: "How It Works",
-      active: pathname === "/how-it-works",
-    },
+    // {
+    //   href: "/about",
+    //   label: "About",
+    //   active: pathname === "/about",
+    // },
+    // {
+    //   href: "/how-it-works",
+    //   label: "How It Works",
+    //   active: pathname === "/how-it-works",
+    // },
     {
       href: "/litepaper",
       label: "Litepaper",

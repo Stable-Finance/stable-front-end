@@ -177,6 +177,9 @@ export function SiteFooter() {
         <p className="text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Stable Finance. All rights reserved.
         </p>
+      <p className="text-center text-sm text-muted-foreground mt-2">
+        Developed By Ayaan Kaifullah, <a href="https://github.com/ayaan2907" target="_blank" rel="noopener noreferrer" className="hover:text-foreground transition-colors">github.com/ayaan2907</a>
+      </p>
       </motion.div>
     </footer>
   )
